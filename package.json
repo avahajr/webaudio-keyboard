@@ -1,0 +1,15 @@
+{
+  "name": "hw1",
+  "version": "1.0.0",
+  "description": "COMS3430 HW1",
+  "main": "hw1.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Ava Hajratwala",
+  "license": "ISC",
+  "dependencies": {
+    "bootstrap": "^5.3.2",
+    "react-bootstrap": "^2.8.0"
+  }
+}

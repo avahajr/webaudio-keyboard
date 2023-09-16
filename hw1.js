@@ -1,20 +1,10 @@
-//EVERYTHING IS PLACED INSIDE A DOMContentLoaded EVENT SO THAT WHEN
-//WE getElementById, THE ELEMENTS ARE LOADED & AVAILABLE
 document.addEventListener("DOMContentLoaded", function (event) {
-  //SET UP AUDIO CONTEXT
   const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-  //PROCESSING CHAIN
-  const gain = audioCtx.createGain();
-  const filter = audioCtx.createBiquadFilter();
-
-  //CURRENT WAVEFORM OSCILLATOR WILL USE
   let waveform = "sine";
 
-  //OBJECT FOR STORING ACTIVE NOTES
   const activeOscillators = {};
 
-  //KEYCODE TO MUSICAL FREQUENCY CONVERSION
   const keyboardFrequencyMap = {
     90: 261.625565300598634, //Z - C
     83: 277.182630976872096, //S - C#
@@ -42,22 +32,14 @@ document.addEventListener("DOMContentLoaded", function (event) {
     85: 987.766602512248223, //U - B
   };
 
-  //CONNECTIONS
-  gain.connect(filter);
-  filter.connect(audioCtx.destination);
-
-  //EVENT LISTENERS FOR SYNTH PARAMETER INTERFACE
   const waveformControl = document.getElementById("waveform");
   waveformControl.addEventListener("change", function (event) {
     waveform = event.target.value;
   });
 
-  //EVENT LISTENERS FOR MUSICAL KEYBOARD
   window.addEventListener("keydown", keyDown, false);
   window.addEventListener("keyup", keyUp, false);
 
-  //CALLED ON KEYDOWN EVENT - CALLS PLAYNOTE IF KEY PRESSED IS ON MUSICAL
-  //KEYBOARD && THAT KEY IS NOT CURRENTLY ACTIVE
   function keyDown(event) {
     const key = (event.detail || event.which).toString();
     if (keyboardFrequencyMap[key] && !activeOscillators[key]) {
@@ -65,8 +47,6 @@ document.addEventListener("DOMContentLoaded", function (event) {
     }
   }
 
-  //STOPS & DELETES OSCILLATOR ON KEY RELEASE IF KEY RELEASED IS ON MUSICAL
-  //KEYBOARD && THAT KEY IS CURRENTLY ACTIVE
   function keyUp(event) {
     const key = (event.detail || event.which).toString();
     if (keyboardFrequencyMap[key] && activeOscillators[key]) {
@@ -75,7 +55,6 @@ document.addEventListener("DOMContentLoaded", function (event) {
     }
   }
 
-  //HANDLES CREATION & STORING OF OSCILLATORS
   function playNote(key) {
     const osc = audioCtx.createOscillator();
     osc.frequency.setValueAtTime(
@@ -83,8 +62,8 @@ document.addEventListener("DOMContentLoaded", function (event) {
       audioCtx.currentTime
     );
     osc.type = waveform;
+    osc.connect(audioCtx.destination);
+    osc.start();
     activeOscillators[key] = osc;
-    activeOscillators[key].connect(gain);
-    activeOscillators[key].start();
   }
 });

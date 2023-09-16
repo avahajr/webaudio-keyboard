@@ -2,8 +2,18 @@ document.addEventListener("DOMContentLoaded", function (event) {
   const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
   let waveform = "sine";
+  const currGains = {}; // list of gain nodes
 
   const activeOscillators = {};
+  const globalGain = audioCtx.createGain();
+  globalGain.gain.setValueAtTime(0.8, audioCtx.currentTime);
+  globalGain.connect(audioCtx.destination);
+
+  const asdrTimes = {
+    attack: 0.1,
+    decay: 0.2,
+    release: 0.3,
+  };
 
   const keyboardFrequencyMap = {
     90: 261.625565300598634, //Z - C
@@ -50,20 +60,41 @@ document.addEventListener("DOMContentLoaded", function (event) {
   function keyUp(event) {
     const key = (event.detail || event.which).toString();
     if (keyboardFrequencyMap[key] && activeOscillators[key]) {
-      activeOscillators[key].stop();
+      // decay gain node
+      currGains[key].gain.setTargetAtTime(0, audioCtx.currentTime, 0.07);
+      console.log("shutting down node at", key);
+      // activeOscillators[key].stop();
       delete activeOscillators[key];
+      delete currGains[key];
     }
   }
 
   function playNote(key) {
     const osc = audioCtx.createOscillator();
+    const oscGainNode = audioCtx.createGain();
+    osc.connect(oscGainNode);
+    oscGainNode.connect(audioCtx.destination);
+
+    // attack
+    oscGainNode.gain.exponentialRampToValueAtTime(
+      globalGain.gain.value + 0.1,
+      audioCtx.currentTime + 0.03
+    );
+    // decay
+    oscGainNode.gain.exponentialRampToValueAtTime(
+      globalGain.gain.value,
+      audioCtx.currentTime + 0.05
+    );
+
     osc.frequency.setValueAtTime(
       keyboardFrequencyMap[key],
       audioCtx.currentTime
     );
     osc.type = waveform;
-    osc.connect(audioCtx.destination);
+
     osc.start();
+    currGains[key] = oscGainNode;
+    console.log(currGains);
     activeOscillators[key] = osc;
   }
 });

@@ -1,26 +1,20 @@
-const waveform = "sine";
-$(document).ready(function () {
-  // Initialize Bootstrap Switch on the checkbox element
-  $("#oscillatorSwitch").bootstrapSwitch();
-
-  // Event handler for when the switch state changes
-  $("#oscillatorSwitch").on(
-    "switchChange.bootstrapSwitch",
-    function (event, state) {
-      if (state) {
-        // The switch is ON, set the oscillator type to sine
-        waveform = "sine";
-        console.log("Switch is ON");
-      } else {
-        // The switch is OFF, set the oscillator type to sawtooth
-        waveform = "sawtooth";
-        console.log("Switch is OFF");
-      }
-    }
-  );
-});
+//EVERYTHING IS PLACED INSIDE A DOMContentLoaded EVENT SO THAT WHEN
+//WE getElementById, THE ELEMENTS ARE LOADED & AVAILABLE
 document.addEventListener("DOMContentLoaded", function (event) {
+  //SET UP AUDIO CONTEXT
   const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+  //PROCESSING CHAIN
+  const gain = audioCtx.createGain();
+  const filter = audioCtx.createBiquadFilter();
+
+  //CURRENT WAVEFORM OSCILLATOR WILL USE
+  let waveform = "sine";
+
+  //OBJECT FOR STORING ACTIVE NOTES
+  const activeOscillators = {};
+
+  //KEYCODE TO MUSICAL FREQUENCY CONVERSION
   const keyboardFrequencyMap = {
     90: 261.625565300598634, //Z - C
     83: 277.182630976872096, //S - C#
@@ -47,12 +41,23 @@ document.addEventListener("DOMContentLoaded", function (event) {
     55: 932.327523036179832, //7 - A#
     85: 987.766602512248223, //U - B
   };
+
+  //CONNECTIONS
+  gain.connect(filter);
+  filter.connect(audioCtx.destination);
+
+  //EVENT LISTENERS FOR SYNTH PARAMETER INTERFACE
+  const waveformControl = document.getElementById("waveform");
+  waveformControl.addEventListener("change", function (event) {
+    waveform = event.target.value;
+  });
+
+  //EVENT LISTENERS FOR MUSICAL KEYBOARD
   window.addEventListener("keydown", keyDown, false);
   window.addEventListener("keyup", keyUp, false);
-  window.addEventListener("");
 
-  activeOscillators = {};
-
+  //CALLED ON KEYDOWN EVENT - CALLS PLAYNOTE IF KEY PRESSED IS ON MUSICAL
+  //KEYBOARD && THAT KEY IS NOT CURRENTLY ACTIVE
   function keyDown(event) {
     const key = (event.detail || event.which).toString();
     if (keyboardFrequencyMap[key] && !activeOscillators[key]) {
@@ -60,6 +65,8 @@ document.addEventListener("DOMContentLoaded", function (event) {
     }
   }
 
+  //STOPS & DELETES OSCILLATOR ON KEY RELEASE IF KEY RELEASED IS ON MUSICAL
+  //KEYBOARD && THAT KEY IS CURRENTLY ACTIVE
   function keyUp(event) {
     const key = (event.detail || event.which).toString();
     if (keyboardFrequencyMap[key] && activeOscillators[key]) {
@@ -67,15 +74,17 @@ document.addEventListener("DOMContentLoaded", function (event) {
       delete activeOscillators[key];
     }
   }
+
+  //HANDLES CREATION & STORING OF OSCILLATORS
   function playNote(key) {
     const osc = audioCtx.createOscillator();
     osc.frequency.setValueAtTime(
       keyboardFrequencyMap[key],
       audioCtx.currentTime
     );
-    osc.type = "sine"; //choose your favorite waveform
-    osc.connect(audioCtx.destination);
-    osc.start();
+    osc.type = waveform;
     activeOscillators[key] = osc;
+    activeOscillators[key].connect(gain);
+    activeOscillators[key].start();
   }
 });

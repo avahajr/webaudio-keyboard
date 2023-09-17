@@ -5,6 +5,7 @@ document.addEventListener("DOMContentLoaded", function (event) {
   const currGains = {}; // list of gain nodes
 
   const activeOscillators = {};
+  let numKeysPressed = 0;
   const globalGain = audioCtx.createGain();
   globalGain.gain.setValueAtTime(0.8, audioCtx.currentTime);
   globalGain.connect(audioCtx.destination);
@@ -53,12 +54,14 @@ document.addEventListener("DOMContentLoaded", function (event) {
   function keyDown(event) {
     const key = (event.detail || event.which).toString();
     if (keyboardFrequencyMap[key] && !activeOscillators[key]) {
+      numKeysPressed += 1;
       playNote(key);
     }
   }
 
   function keyUp(event) {
     const key = (event.detail || event.which).toString();
+
     if (keyboardFrequencyMap[key] && activeOscillators[key]) {
       // decay gain node
       currGains[key].gain.setTargetAtTime(
@@ -66,30 +69,47 @@ document.addEventListener("DOMContentLoaded", function (event) {
         audioCtx.currentTime,
         5 * asdrTimes.release
       );
+
       console.log("shutting down node at", key);
       setTimeout(function () {
-        console.log("currGain:", currGains[key].gain.value);
-        activeOscillators[key].stop();
-        delete activeOscillators[key];
-        delete currGains[key];
-      }, 1000 * 15 * asdrTimes.release);
+        if (currGains[key]) {
+          console.log("gain at stop:", currGains[key].gain.value);
+          activeOscillators[key].stop();
+          activeOscillators[key].disconnect(currGains[key]);
+
+          delete activeOscillators[key];
+          delete currGains[key];
+          numKeysPressed -= 1;
+        }
+      }, 1000 * 10 * asdrTimes.release);
     }
   }
 
   function playNote(key) {
     const osc = audioCtx.createOscillator();
     const oscGainNode = audioCtx.createGain();
+    currGains[key] = oscGainNode;
+
+    oscGainNode.gain.setValueAtTime(
+      globalGain.gain.value - 0.1,
+      audioCtx.currentTime
+    );
+
+    console.log(numKeysPressed);
+
+    updateGains();
+
     osc.connect(oscGainNode);
     oscGainNode.connect(audioCtx.destination);
 
     // attack
     oscGainNode.gain.exponentialRampToValueAtTime(
-      globalGain.gain.value + 0.1,
+      globalGain.gain.value,
       audioCtx.currentTime + asdrTimes.attack
     );
     // decay
     oscGainNode.gain.exponentialRampToValueAtTime(
-      globalGain.gain.value,
+      globalGain.gain.value - 0.1,
       audioCtx.currentTime + asdrTimes.decay
     );
 
@@ -100,9 +120,20 @@ document.addEventListener("DOMContentLoaded", function (event) {
     osc.type = waveform;
 
     osc.start();
-    currGains[key] = oscGainNode;
     console.log(currGains);
     activeOscillators[key] = osc;
-    console.log(activeOscillators);
+    // console.log(activeOscillators);
+  }
+
+  function updateGains() {
+    if (numKeysPressed > 0) {
+      for (k in currGains) {
+        currGains[k].gain.setValueAtTime(
+          0.5 / numKeysPressed,
+          audioCtx.currentTime
+        );
+        console.log("updated gain for node", k, ":", currGains[k].gain.value);
+      }
+    }
   }
 });

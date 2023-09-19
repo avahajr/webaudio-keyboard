@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Keyboard</title>
+    <title>john key-ts</title>
 
     <!-- Include Bootstrap CSS -->
     <link
@@ -13,14 +13,15 @@
       crossorigin="anonymous"
     />
 
-    <script src="hw1.js"></script>
+    <script src="sounds.js"></script>
+    <script src="poem.js"></script>
   </head>
   <body>
     <div class="container">
       <br />
       <br />
 
-      <h1>Lab 1: WebAudio Keyboard</h1>
+      <h1>Lab 1: Poem Keyboard</h1>
       <br />
       <h5>COMS3430 Computational Sound</h5>
       <p>Ava Hajratwala</p>
@@ -29,9 +30,12 @@
         <span>Choose waveform: </span>
         <select id="waveform">
           <option value="sine" selected="selected">Sine</option>
-          <option value="sawtooth">Sawtooth</option>
+          <option value="sawtooth">Sawtooth (EVIL!)</option>
         </select>
       </body>
     </div>
+    <br />
+    <br />
+    <div id="wordDisplay" class="container"></div>
   </body>
 </html>

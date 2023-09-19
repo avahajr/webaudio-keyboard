@@ -11,9 +11,9 @@ document.addEventListener("DOMContentLoaded", function (event) {
   globalGain.connect(audioCtx.destination);
 
   const asdrTimes = {
-    attack: 0.03,
+    attack: 0.04,
     decay: 0.02,
-    release: 0.03,
+    release: 0.04,
   };
 
   const keyboardFrequencyMap = {
@@ -73,7 +73,12 @@ document.addEventListener("DOMContentLoaded", function (event) {
       console.log("shutting down node at", key);
       setTimeout(function () {
         if (currGains[key]) {
-          console.log("gain at stop:", currGains[key].gain.value);
+          console.log(
+            "gain for node",
+            key,
+            "at stop:",
+            currGains[key].gain.value
+          );
           activeOscillators[key].stop();
           activeOscillators[key].disconnect(currGains[key]);
 
@@ -81,7 +86,7 @@ document.addEventListener("DOMContentLoaded", function (event) {
           delete currGains[key];
           numKeysPressed -= 1;
         }
-      }, 1000 * 10 * asdrTimes.release);
+      }, 1000 * 20 * asdrTimes.release);
     }
   }
 
@@ -90,17 +95,13 @@ document.addEventListener("DOMContentLoaded", function (event) {
     const oscGainNode = audioCtx.createGain();
     currGains[key] = oscGainNode;
 
-    oscGainNode.gain.setValueAtTime(
-      globalGain.gain.value - 0.1,
-      audioCtx.currentTime
-    );
+    oscGainNode.gain.setValueAtTime(0, audioCtx.currentTime);
 
     console.log(numKeysPressed);
 
     updateGains();
 
-    osc.connect(oscGainNode);
-    oscGainNode.connect(audioCtx.destination);
+    osc.connect(oscGainNode).connect(audioCtx.destination);
 
     // attack
     oscGainNode.gain.exponentialRampToValueAtTime(
@@ -129,7 +130,7 @@ document.addEventListener("DOMContentLoaded", function (event) {
     if (numKeysPressed > 0) {
       for (k in currGains) {
         currGains[k].gain.setValueAtTime(
-          0.5 / numKeysPressed,
+          0.2 / numKeysPressed,
           audioCtx.currentTime
         );
         console.log("updated gain for node", k, ":", currGains[k].gain.value);
